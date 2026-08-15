@@ -31,6 +31,9 @@
 #  if !defined( VULKAN_HPP_NO_EXCEPTIONS )
 #    include <system_error>  // std::is_error_code_enum
 #  endif
+#  if defined( VULKAN_HPP_USE_CPPTRACE ) && !defined( VULKAN_HPP_NO_EXCEPTIONS )
+#    include <cpptrace/exceptions.hpp>
+#  endif
 #  if defined( VULKAN_HPP_SUPPORT_SPAN )
 #    include <span>
 #  endif
@@ -8592,6 +8595,54 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
     }
   };
 
+#  if defined( VULKAN_HPP_USE_CPPTRACE )
+  class SystemError
+    : public Error
+    , public std::system_error
+  {
+  public:
+    SystemError( std::error_code ec ) : Error(), std::system_error( ec ), m_tracedError( std::string( std::system_error::what() ) ) {}
+
+    SystemError( std::error_code ec, std::string const & what )
+      : Error(), std::system_error( ec, what ), m_tracedError( std::string( std::system_error::what() ) )
+    {
+    }
+
+    SystemError( std::error_code ec, char const * what ) : Error(), std::system_error( ec, what ), m_tracedError( std::string( std::system_error::what() ) ) {}
+
+    SystemError( int ev, std::error_category const & ecat ) : Error(), std::system_error( ev, ecat ), m_tracedError( std::string( std::system_error::what() ) )
+    {
+    }
+
+    SystemError( int ev, std::error_category const & ecat, std::string const & what )
+      : Error(), std::system_error( ev, ecat, what ), m_tracedError( std::string( std::system_error::what() ) )
+    {
+    }
+
+    SystemError( int ev, std::error_category const & ecat, char const * what )
+      : Error(), std::system_error( ev, ecat, what ), m_tracedError( std::string( std::system_error::what() ) )
+    {
+    }
+
+    virtual char const * what() const VULKAN_HPP_NOEXCEPT
+    {
+      return m_tracedError.what();
+    }
+
+    char const * message() const VULKAN_HPP_NOEXCEPT
+    {
+      return m_tracedError.message();
+    }
+
+    cpptrace::stacktrace const & trace() const VULKAN_HPP_NOEXCEPT
+    {
+      return m_tracedError.trace();
+    }
+
+  private:
+    cpptrace::exception_with_message m_tracedError;
+  };
+#  else
   class SystemError
     : public Error
     , public std::system_error
@@ -8614,6 +8665,7 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
       return std::system_error::what();
     }
   };
+#  endif
 
   VULKAN_HPP_INLINE std::error_category const & errorCategory() VULKAN_HPP_NOEXCEPT
   {

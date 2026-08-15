@@ -25,6 +25,9 @@
 #  if !defined( VULKAN_HPP_NO_EXCEPTIONS )
 #    include <system_error>  // std::is_error_code_enum
 #  endif
+#  if defined( VULKAN_HPP_USE_CPPTRACE ) && !defined( VULKAN_HPP_NO_EXCEPTIONS )
+#    include <cpptrace/exceptions.hpp>
+#  endif
 #  if defined( VULKAN_HPP_SUPPORT_SPAN )
 #    include <span>
 #  endif

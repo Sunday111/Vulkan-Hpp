@@ -61,6 +61,7 @@ option( VULKAN_HPP_NO_WIN32_PROTOTYPES "Remove HINSTANCE, LoadLibraryA and other
 option( VULKAN_HPP_RAII_NO_EXCEPTIONS "Do not throw exceptions when vulkan functions from vk::raii return an error code." OFF )
 option( VULKAN_HPP_SMART_HANDLE_IMPLICIT_CAST "Enable implicit casts from vk::UniqueHandle and vk::SharedHandle to their matching vk::Handle" OFF )
 option( VULKAN_HPP_TYPESAFE_CONVERSION "Enable copy constructors for non-dispatchable handles" ON )
+option( VULKAN_HPP_USE_CPPTRACE "Capture stack traces in Vulkan-Hpp system exceptions" OFF )
 option( VULKAN_HPP_USE_REFLECT "Adds reflect function to structures, which returns an iterable tuple" OFF )
 option( VULKAN_HPP_USE_STD_EXPECTED "Use std::expected for functions returning VkResult and a value" OFF )
 
@@ -267,8 +268,14 @@ function( vulkan_hpp__setup_vulkan_targets )
 	if( VULKAN_HPP_BUILD_WITH_LOCAL_VULKAN_HPP )
 		# Vulkan C++ headers
 		target_include_directories( VulkanHpp INTERFACE "${CMAKE_CURRENT_FUNCTION_LIST_DIR}" )
-		# Vulkan C headers
-		target_include_directories( VulkanHpp INTERFACE "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/Vulkan-Headers/include" )
+		if( TARGET Vulkan::Headers )
+			target_link_libraries( VulkanHpp INTERFACE Vulkan::Headers )
+		elseif( EXISTS "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/Vulkan-Headers/include/vulkan/vulkan.h" )
+			# Vulkan C headers
+			target_include_directories( VulkanHpp INTERFACE "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/Vulkan-Headers/include" )
+		else()
+			message( FATAL_ERROR "Vulkan-Hpp requires either the Vulkan::Headers target or an initialized Vulkan-Headers submodule" )
+		endif()
 	else()
 		find_package( Vulkan REQUIRED )
 		target_include_directories( VulkanHpp INTERFACE "${Vulkan_INCLUDE_DIRS}" )
@@ -296,6 +303,13 @@ function( vulkan_hpp__setup_vulkan_targets )
 		else()
 			message(WARNING "Could not link to system Vulkan libraries, consider using VULKAN_HPP_DISPATCH_LOADER_DYNAMIC")
 		endif()
+	endif()
+	if( VULKAN_HPP_USE_CPPTRACE AND NOT VULKAN_HPP_NO_EXCEPTIONS )
+		if( NOT TARGET cpptrace::cpptrace )
+			find_package( cpptrace CONFIG REQUIRED )
+		endif()
+		target_compile_definitions( VulkanHpp INTERFACE "VULKAN_HPP_USE_CPPTRACE" )
+		target_link_libraries( VulkanHpp INTERFACE cpptrace::cpptrace )
 	endif()
 	if( VULKAN_HPP_USE_REFLECT )
 		target_compile_definitions(VulkanHpp INTERFACE "VULKAN_HPP_USE_REFLECT" )
@@ -568,6 +582,7 @@ function( vulkan_hpp__setup_test )
 					-D VULKAN_HPP_RAII_NO_EXCEPTIONS=${VULKAN_HPP_RAII_NO_EXCEPTIONS}
 					-D VULKAN_HPP_SMART_HANDLE_IMPLICIT_CAST=${VULKAN_HPP_SMART_HANDLE_IMPLICIT_CAST}
 					-D VULKAN_HPP_TYPESAFE_CONVERSION=${VULKAN_HPP_TYPESAFE_CONVERSION}
+					-D VULKAN_HPP_USE_CPPTRACE=${VULKAN_HPP_USE_CPPTRACE}
 					-D VULKAN_HPP_USE_REFLECT=${VULKAN_HPP_USE_REFLECT}
 					# forward compiler setup
 					-D CMAKE_EXE_LINKER_FLAGS=${CMAKE_EXE_LINKER_FLAGS}
