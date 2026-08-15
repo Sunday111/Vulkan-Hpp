@@ -9,6 +9,9 @@ module;
 
 #include <cassert>
 #include <cstring>
+#if defined( VULKAN_HPP_USE_CPPTRACE ) && !defined( VULKAN_HPP_NO_EXCEPTIONS )
+#  include <cpptrace/exceptions.hpp>
+#endif
 #include <vulkan/${vulkan_h}>
 #include <vulkan/vulkan_hpp_macros.hpp>
 

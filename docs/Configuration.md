@@ -39,6 +39,7 @@ These are exposed as the following compiler macros, which be defined in a build 
 - [`VULKAN_HPP_STORAGE_API`](#vulkan_hpp_storage_api)
 - [`VULKAN_HPP_TYPESAFE_CONVERSION`](#vulkan_hpp_typesafe_conversion)
 - [`VULKAN_HPP_UNEXPECTED`](#vulkan_hpp_unexpected)
+- [`VULKAN_HPP_USE_CPPTRACE`](#vulkan_hpp_use_cpptrace)
 - [`VULKAN_HPP_USE_REFLECT`](#vulkan_hpp_use_reflect)
 - [`VULKAN_HPP_USE_STD_EXPECTED`](#vulkan_hpp_use_std_expected)
 
@@ -183,6 +184,10 @@ With this define you can specify whether the `vk::detail::DispatchLoaderDynamic`
 ## `VULKAN_HPP_UNEXPECTED`
 
 See [`VULKAN_HPP_EXPECTED`](#vulkan_hpp_expected).
+
+## `VULKAN_HPP_USE_CPPTRACE`
+
+With this define, Vulkan-Hpp system exceptions capture a stack trace through cpptrace. `vk::SystemError` retains its error code and the generated result-specific exception hierarchy remains available. Link the application to `cpptrace::cpptrace` when enabling this option. The option has no effect when `VULKAN_HPP_NO_EXCEPTIONS` is defined.
 
 ## `VULKAN_HPP_USE_REFLECT`
 
