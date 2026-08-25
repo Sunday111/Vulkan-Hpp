@@ -2453,6 +2453,76 @@ int main()
     device.updateDescriptorSetWithTemplate( descriptorSet, descriptorUpdateTemplate, data );
   }
 
+  // Promoted from VK_KHR_maintenance3
+  {
+    vk::Device                        device;
+    vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+    vk::DescriptorSetLayoutSupport    descriptorSetLayoutSupport;
+    device.getDescriptorSetLayoutSupport( &descriptorSetLayoutCreateInfo, &descriptorSetLayoutSupport );
+  }
+  {
+    vk::Device                        device;
+    vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+    vk::DescriptorSetLayoutSupport    descriptorSetLayoutSupport = device.getDescriptorSetLayoutSupport( descriptorSetLayoutCreateInfo );
+  }
+  {
+    vk::Device                                                                                                device;
+    vk::DescriptorSetLayoutCreateInfo                                                                         descriptorSetLayoutCreateInfo;
+    vk::StructureChain<vk::DescriptorSetLayoutSupport, vk::DescriptorSetVariableDescriptorCountLayoutSupport> descriptorSetLayoutSupportChain =
+      device.getDescriptorSetLayoutSupport<vk::DescriptorSetLayoutSupport, vk::DescriptorSetVariableDescriptorCountLayoutSupport>(
+        descriptorSetLayoutCreateInfo );
+  }
+
+  // Promoted from VK_KHR_sampler_ycbcr_conversion
+  {
+    vk::Device                           device;
+    vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
+    vk::AllocationCallbacks              allocationCallbacks;
+    vk::SamplerYcbcrConversion           samplerYcbcrConversion;
+    vk::Result result = device.createSamplerYcbcrConversion( &samplerYcbcrConversionCreateInfo, &allocationCallbacks, &samplerYcbcrConversion );
+  }
+  {
+    vk::Device                           device;
+    vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
+    vk::SamplerYcbcrConversion           samplerYcbcrConversion = device.createSamplerYcbcrConversion( samplerYcbcrConversionCreateInfo );
+  }
+
+  {
+    vk::Device                 device;
+    vk::SamplerYcbcrConversion samplerYcbcrConversion;
+    vk::AllocationCallbacks    allocationCallbacks;
+    device.destroySamplerYcbcrConversion( samplerYcbcrConversion, &allocationCallbacks );
+  }
+  {
+    vk::Device                 device;
+    vk::SamplerYcbcrConversion samplerYcbcrConversion;
+    device.destroySamplerYcbcrConversion( samplerYcbcrConversion );
+  }
+  {
+    vk::Device                 device;
+    vk::SamplerYcbcrConversion samplerYcbcrConversion;
+    vk::AllocationCallbacks    allocationCallbacks;
+    device.destroy( samplerYcbcrConversion, &allocationCallbacks );
+  }
+  {
+    vk::Device                 device;
+    vk::SamplerYcbcrConversion samplerYcbcrConversion;
+    device.destroy( samplerYcbcrConversion );
+  }
+
+  //==========================================
+  // Vulkan base 1.2 API interface definitions
+  //==========================================
+
+  // Promoted from VK_EXT_host_query_reset
+  {
+    vk::Device    device;
+    vk::QueryPool queryPool;
+    uint32_t      firstQuery = 0;
+    uint32_t      queryCount = 1;
+    device.resetQueryPool( queryPool, firstQuery, queryCount );
+  }
+
 #if 0
   {
     vk::PhysicalDevice physicalDevice;

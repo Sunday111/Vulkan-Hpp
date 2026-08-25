@@ -45,9 +45,10 @@ struct Tags
 
 struct Alias
 {
-  std::string name    = {};
-  std::string alias   = {};
-  int         xmlLine = {};
+  std::string name       = {};
+  std::string alias      = {};
+  std::string deprecated = {};
+  int         xmlLine    = {};
 };
 
 struct TypeBaseType
@@ -93,6 +94,7 @@ struct EnumValue
   std::string                 name    = {};
   std::string                 bitPos  = {};
   std::string                 comment = {};
+  std::string                 offset  = {};
   std::string                 value   = {};
   std::vector<EnumValueAlias> aliases = {};
   int                         xmlLine = {};
@@ -380,22 +382,65 @@ struct ExtensionRemove
   int            xmlLine = {};
 };
 
-struct ExtensionRequireEnum
+struct ExtensionRequireEnumAlias
 {
   std::string name       = {};
   std::string alias      = {};
+  std::string extends    = {};
   std::string api        = {};
-  std::string bitPos     = {};
   std::string comment    = {};
   std::string deprecated = {};
-  std::string dir        = {};
-  std::string extends    = {};
-  std::string extNumber  = {};
-  std::string offset     = {};
   std::string protect    = {};
-  std::string value      = {};
   int         xmlLine    = {};
 };
+
+using ExtensionRequireEnumAliasVariant = std::variant<ExtensionRequireEnumAlias, Alias>;
+
+struct ExtensionRequireEnumExtendByBitPos
+{
+  std::string name    = {};
+  std::string extends = {};
+  std::string bitPos  = {};
+  std::string comment = {};
+  std::string protect = {};
+  int         xmlLine = {};
+};
+
+struct ExtensionRequireEnumExtendByOffset
+{
+  std::string name       = {};
+  std::string extends    = {};
+  std::string offset     = {};
+  std::string comment    = {};
+  std::string dir        = {};
+  std::string deprecated = {};
+  std::string extNumber  = {};
+  std::string protect    = {};
+  int         xmlLine    = {};
+};
+
+struct ExtensionRequireEnumExtendByValue
+{
+  std::string name    = {};
+  std::string extends = {};
+  std::string value   = {};
+  std::string comment = {};
+  int         xmlLine = {};
+};
+
+using ExtensionRequireEnumExtendVariant =
+  std::variant<ExtensionRequireEnumExtendByBitPos, ExtensionRequireEnumExtendByOffset, ExtensionRequireEnumExtendByValue>;
+
+struct ExtensionRequireEnumConstant
+{
+  std::string name    = {};
+  std::string value   = {};
+  int         xmlLine = {};
+};
+
+using ExtensionRequireEnumConstantVariant = std::variant<ExtensionRequireEnumConstant, NameElement>;
+
+using ExtensionRequireEnumVariant = std::variant<ExtensionRequireEnumAliasVariant, ExtensionRequireEnumExtendVariant, ExtensionRequireEnumConstantVariant>;
 
 struct MultiFeatureElement
 {
@@ -406,14 +451,14 @@ struct MultiFeatureElement
 
 struct ExtensionRequire
 {
-  std::string                       api      = {};
-  std::vector<NameElement>          commands = {};
-  std::string                       comment  = {};
-  std::string                       depends  = {};
-  std::vector<ExtensionRequireEnum> enums    = {};
-  std::vector<MultiFeatureElement>  features = {};
-  std::vector<NameElement>          types    = {};
-  int                               xmlLine  = {};
+  std::string                              api      = {};
+  std::vector<NameElement>                 commands = {};
+  std::string                              comment  = {};
+  std::string                              depends  = {};
+  std::vector<ExtensionRequireEnumVariant> enums    = {};
+  std::vector<MultiFeatureElement>         features = {};
+  std::vector<NameElement>                 types    = {};
+  int                                      xmlLine  = {};
 };
 
 struct Extension
@@ -642,15 +687,23 @@ struct VideoRequireCapabilities
   int         xmlLine   = {};
 };
 
-struct VideoFormat
+struct VideoFormatExtend
 {
-  std::string                             extend                   = {};
+  std::string           extend                = {};
+  VideoFormatProperties videoFormatProperties = {};
+  int                   xmlLine               = {};
+};
+
+struct VideoFormatRegular
+{
   std::string                             name                     = {};
   std::string                             usage                    = {};
-  std::optional<VideoFormatProperties>    videoFormatProperties    = {};
   std::optional<VideoRequireCapabilities> videoRequireCapabilities = {};
+  std::optional<VideoFormatProperties>    videoFormatProperties    = {};
   int                                     xmlLine                  = {};
 };
+
+using VideoFormatVariant = std::variant<VideoFormatExtend, VideoFormatRegular>;
 
 struct VideoProfile
 {
@@ -673,16 +726,26 @@ struct VideoProfiles
   int                             xmlLine             = {};
 };
 
-struct VideoCodec
+struct VideoCodecExtend
 {
-  std::string                    extend            = {};
-  std::string                    name              = {};
-  std::string                    value             = {};
-  std::vector<VideoCapabilities> videoCapabilities = {};
-  std::vector<VideoFormat>       videoFormats      = {};
-  std::optional<VideoProfiles>   videoProfiles     = {};
-  int                            xmlLine           = {};
+  std::string                     name              = {};
+  std::string                     extend            = {};
+  std::string                     value             = {};
+  std::vector<VideoCapabilities>  videoCapabilities = {};
+  std::vector<VideoFormatVariant> videoFormats      = {};
+  VideoProfiles                   videoProfiles     = {};
+  int                             xmlLine           = {};
 };
+
+struct VideoCodecRegular
+{
+  std::string                     name              = {};
+  std::vector<VideoCapabilities>  videoCapabilities = {};
+  std::vector<VideoFormatVariant> videoFormats      = {};
+  int                             xmlLine           = {};
+};
+
+using VideoCodecVariant = std::variant<VideoCodecExtend, VideoCodecRegular>;
 
 struct Plane
 {
@@ -710,18 +773,25 @@ struct Format
   int                      xmlLine          = {};
 };
 
-struct SPIRVExtensionEnable
+struct SPIRVExtensionEnableByExtension
 {
-  std::string version   = {};
   std::string extension = {};
   int         xmlLine   = {};
 };
 
+struct SPIRVExtensionEnableByVersion
+{
+  std::string version = {};
+  int         xmlLine = {};
+};
+
+using SPIRVExtensionEnableVariant = std::variant<SPIRVExtensionEnableByExtension, SPIRVExtensionEnableByVersion>;
+
 struct SPIRVExtension
 {
-  std::vector<SPIRVExtensionEnable> enables = {};
-  std::string                       name    = {};
-  int                               xmlLine = {};
+  std::vector<SPIRVExtensionEnableVariant> enables = {};
+  std::string                              name    = {};
+  int                                      xmlLine = {};
 };
 
 struct SPIRVExtensions
@@ -731,25 +801,44 @@ struct SPIRVExtensions
   int                         xmlLine    = {};
 };
 
-struct SPIRVCapabilityEnable
+struct SPIRVCapabilityEnableByExtension
+{
+  std::string extension = {};
+  int         xmlLine   = {};
+};
+
+struct SPIRVCapabilityEnableByProperty
+{
+  std::string              member   = {};
+  std::string              property = {};
+  std::vector<std::string> require  = {};
+  std::string              value    = {};
+  int                      xmlLine  = {};
+};
+
+struct SPIRVCapabilityEnableByStruct
 {
   std::string              alias     = {};
-  std::string              extension = {};
   std::string              feature   = {};
-  std::string              member    = {};
-  std::string              property  = {};
   std::vector<std::string> require   = {};
   std::string              structure = {};
-  std::string              value     = {};
-  std::string              version   = {};
   int                      xmlLine   = {};
 };
 
+struct SPIRVCapabilityEnableByVersion
+{
+  std::string version = {};
+  int         xmlLine = {};
+};
+
+using SPIRVCapabilityEnableVariant =
+  std::variant<SPIRVCapabilityEnableByExtension, SPIRVCapabilityEnableByProperty, SPIRVCapabilityEnableByStruct, SPIRVCapabilityEnableByVersion>;
+
 struct SPIRVCapability
 {
-  std::vector<SPIRVCapabilityEnable> enables = {};
-  std::string                        name    = {};
-  int                                xmlLine = {};
+  std::vector<SPIRVCapabilityEnableVariant> enables = {};
+  std::string                               name    = {};
+  int                                       xmlLine = {};
 };
 
 struct SPIRVCapabilities
@@ -761,28 +850,28 @@ struct SPIRVCapabilities
 
 struct Vkxml
 {
-  std::vector<TypeBaseType>    baseTypes         = {};
-  std::vector<TypeBitmask>     bitmasks          = {};
-  std::vector<Command>         commands          = {};
-  EnumsConstants               constants         = {};
-  Comment                      copyright         = {};
-  std::vector<TypeDefine>      defines           = {};
-  std::vector<TypeEnum>        enums             = {};
-  Extensions                   extensions        = {};
-  std::vector<TypeExternal>    externals         = {};
-  std::vector<Feature>         features          = {};
-  std::vector<Format>          formats           = {};
-  std::vector<TypeFuncPointer> funcPointers      = {};
-  std::vector<TypeHandle>      handles           = {};
-  std::vector<TypeInclude>     includes          = {};
-  Platforms                    platforms         = {};
-  SPIRVCapabilities            spirvCapabilities = {};
-  SPIRVExtensions              spirvExtensions   = {};
-  std::vector<TypeStruct>      structs           = {};
-  Sync                         sync              = {};
-  Tags                         tags              = {};
-  std::vector<TypeUnion>       unions            = {};
-  std::vector<VideoCodec>      videoCodecs       = {};
+  std::vector<TypeBaseType>      baseTypes         = {};
+  std::vector<TypeBitmask>       bitmasks          = {};
+  std::vector<Command>           commands          = {};
+  EnumsConstants                 constants         = {};
+  Comment                        copyright         = {};
+  std::vector<TypeDefine>        defines           = {};
+  std::vector<TypeEnum>          enums             = {};
+  Extensions                     extensions        = {};
+  std::vector<TypeExternal>      externals         = {};
+  std::vector<Feature>           features          = {};
+  std::vector<Format>            formats           = {};
+  std::vector<TypeFuncPointer>   funcPointers      = {};
+  std::vector<TypeHandle>        handles           = {};
+  std::vector<TypeInclude>       includes          = {};
+  Platforms                      platforms         = {};
+  SPIRVCapabilities              spirvCapabilities = {};
+  SPIRVExtensions                spirvExtensions   = {};
+  std::vector<TypeStruct>        structs           = {};
+  Sync                           sync              = {};
+  Tags                           tags              = {};
+  std::vector<TypeUnion>         unions            = {};
+  std::vector<VideoCodecVariant> videoCodecs       = {};
 
   std::set<std::string> types = {};
 };

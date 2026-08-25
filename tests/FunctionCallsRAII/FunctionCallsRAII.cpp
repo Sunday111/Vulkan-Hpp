@@ -691,6 +691,11 @@ int main()
     vk::DescriptorSetAllocateInfo        descriptorSetAllocateInfo;
     std::vector<vk::raii::DescriptorSet> descriptorSets = device.allocateDescriptorSets( descriptorSetAllocateInfo );
   }
+  {
+    vk::raii::Device              device = nullptr;
+    vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo;
+    vk::raii::DescriptorSets      descriptorSets( device, descriptorSetAllocateInfo );
+  }
 
   {
     vk::raii::Device                    device = nullptr;
@@ -1227,12 +1232,55 @@ int main()
     vk::DescriptorUpdateTemplateCreateInfo descriptorUpdateTemplateCreateInfo;
     vk::raii::DescriptorUpdateTemplate     descriptorUpdateTemplate = device.createDescriptorUpdateTemplate( descriptorUpdateTemplateCreateInfo );
   }
+  {
+    vk::raii::Device                       device = nullptr;
+    vk::DescriptorUpdateTemplateCreateInfo descriptorUpdateTemplateCreateInfo;
+    vk::raii::DescriptorUpdateTemplate     descriptorUpdateTemplate( device, descriptorUpdateTemplateCreateInfo );
+  }
 
   {
     vk::raii::DescriptorSet            descriptorSet            = nullptr;
     vk::raii::DescriptorUpdateTemplate descriptorUpdateTemplate = nullptr;
-    uint32_t                           data = 0;
+    uint32_t                           data                     = 0;
     descriptorSet.updateWithTemplate( *descriptorUpdateTemplate, data );
+  }
+
+  // Promoted from VK_KHR_maintenance3
+  {
+    vk::raii::Device                  device = nullptr;
+    vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+    vk::DescriptorSetLayoutSupport    descriptorSetLayoutSupport = device.getDescriptorSetLayoutSupport( descriptorSetLayoutCreateInfo );
+  }
+  {
+    vk::raii::Device                                                                                          device = nullptr;
+    vk::DescriptorSetLayoutCreateInfo                                                                         descriptorSetLayoutCreateInfo;
+    vk::StructureChain<vk::DescriptorSetLayoutSupport, vk::DescriptorSetVariableDescriptorCountLayoutSupport> descriptorSetLayoutSupportChain =
+      device.getDescriptorSetLayoutSupport<vk::DescriptorSetLayoutSupport, vk::DescriptorSetVariableDescriptorCountLayoutSupport>(
+        descriptorSetLayoutCreateInfo );
+  }
+
+  // Promoted from VK_KHR_sampler_ycbcr_conversion
+  {
+    vk::raii::Device                     device = nullptr;
+    vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
+    vk::raii::SamplerYcbcrConversion     samplerYcbcrConversion = device.createSamplerYcbcrConversion( samplerYcbcrConversionCreateInfo );
+  }
+  {
+    vk::raii::Device                     device = nullptr;
+    vk::SamplerYcbcrConversionCreateInfo samplerYcbcrConversionCreateInfo;
+    vk::raii::SamplerYcbcrConversion     samplerYcbcrConversion( device, samplerYcbcrConversionCreateInfo );
+  }
+
+  //==========================================
+  // Vulkan base 1.2 API interface definitions
+  //==========================================
+
+  // Promoted from VK_EXT_host_query_reset
+  {
+    vk::raii::QueryPool queryPool  = nullptr;
+    uint32_t            firstQuery = 0;
+    uint32_t            queryCount = 1;
+    queryPool.reset( firstQuery, queryCount );
   }
 
   return 0;

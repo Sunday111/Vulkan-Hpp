@@ -18,6 +18,9 @@
 #  include <string.h>  // strnlen
 #  include <string>    // std::string
 #  include <utility>   // std::exchange
+#  if defined( __APPLE__ )
+#    include <cstdlib>  // std::getenv
+#  endif
 #  if 17 <= VULKAN_HPP_CPP_VERSION
 #    include <string_view>
 #  endif
@@ -39,7 +42,7 @@
 #  endif
 #endif
 
-VULKAN_HPP_STATIC_ASSERT( VK_HEADER_VERSION == 359, "Wrong VK_HEADER_VERSION!" );
+VULKAN_HPP_STATIC_ASSERT( VK_HEADER_VERSION == 360, "Wrong VK_HEADER_VERSION!" );
 
 VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
 {
@@ -90,14 +93,14 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
 
     VULKAN_HPP_CONSTEXPR ArrayWrapper1D( std::array<T, N> const & data ) VULKAN_HPP_NOEXCEPT : std::array<T, N>( data ) {}
 
-    template <typename B = T, typename std::enable_if<std::is_same<B, char>::value, int>::type = 0>
+    VULKAN_HPP_TEMPLATE_CHAR
     VULKAN_HPP_CONSTEXPR_14 ArrayWrapper1D( std::string const & data ) VULKAN_HPP_NOEXCEPT
     {
       copy( data.data(), data.length() );
     }
 
 #if 17 <= VULKAN_HPP_CPP_VERSION
-    template <typename B = T, typename std::enable_if<std::is_same<B, char>::value, int>::type = 0>
+    VULKAN_HPP_TEMPLATE_CHAR
     VULKAN_HPP_CONSTEXPR_14 ArrayWrapper1D( std::string_view data ) VULKAN_HPP_NOEXCEPT
     {
       copy( data.data(), data.length() );
@@ -127,14 +130,14 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
       return this->data();
     }
 
-    template <typename B = T, typename std::enable_if<std::is_same<B, char>::value, int>::type = 0>
+    VULKAN_HPP_TEMPLATE_CHAR
     operator std::string() const
     {
       return std::string( this->data(), strnlen( this->data(), N ) );
     }
 
 #if 17 <= VULKAN_HPP_CPP_VERSION
-    template <typename B = T, typename std::enable_if<std::is_same<B, char>::value, int>::type = 0>
+    VULKAN_HPP_TEMPLATE_CHAR
     operator std::string_view() const
     {
       return std::string_view( this->data(), strnlen( this->data(), N ) );
@@ -347,7 +350,12 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
     {
     }
 
+#  if VULKAN_HPP_CPP_VERSION < 20
     template <typename B = T, typename std::enable_if<std::is_const<B>::value, int>::type = 0>
+#  else
+    template <typename B = T>
+    requires std::is_const<B>::value
+#  endif
     ArrayProxy( std::initializer_list<typename std::remove_const<T>::type> const & list ) VULKAN_HPP_NOEXCEPT
       : m_count( static_cast<uint32_t>( list.size() ) )
       , m_ptr( list.begin() )
@@ -360,9 +368,15 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
 
     // Any type with a .data() return type implicitly convertible to T*, and a .size() return type implicitly
     // convertible to size_t. The const version can capture temporaries, with lifetime ending at end of statement.
+#  if VULKAN_HPP_CPP_VERSION < 20
     template <typename V,
               typename std::enable_if<std::is_convertible<decltype( std::declval<V>().data() ), T *>::value &&
                                       std::is_convertible<decltype( std::declval<V>().size() ), std::size_t>::value>::type * = nullptr>
+#  else
+    template <typename V>
+    requires std::is_convertible<decltype( std::declval<V>().data() ), T *>::value &&
+               std::is_convertible<decltype( std::declval<V>().size() ), std::size_t>::value
+#  endif
     ArrayProxy( V const & v ) VULKAN_HPP_NOEXCEPT
       : m_count( static_cast<uint32_t>( v.size() ) )
       , m_ptr( v.data() )
@@ -427,8 +441,13 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
     {
     }
 
-    template <typename B = T, typename std::enable_if<std::is_convertible<B, T>::value && std::is_lvalue_reference<B>::value, int>::type = 0>
-    ArrayProxyNoTemporaries( B && value ) VULKAN_HPP_NOEXCEPT
+#  if VULKAN_HPP_CPP_VERSION < 20
+    template <typename S, typename std::enable_if<std::is_convertible<S, T>::value && std::is_lvalue_reference<S>::value, int>::type = 0>
+#  else
+    template <typename S>
+    requires std::is_convertible<S, T>::value && std::is_lvalue_reference<S>::value
+#  endif
+    ArrayProxyNoTemporaries( S && value ) VULKAN_HPP_NOEXCEPT
       : m_count( 1 )
       , m_ptr( &value )
     {
@@ -451,11 +470,18 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
     ArrayProxyNoTemporaries( T ( &&ptr )[C] ) = delete;
 
     // Any l-value reference with a .data() return type implicitly convertible to T*, and a .size() return type implicitly convertible to size_t.
+#  if VULKAN_HPP_CPP_VERSION < 20
     template <typename V,
               typename std::enable_if<!std::is_convertible<decltype( std::declval<V>().begin() ), T *>::value &&
                                         std::is_convertible<decltype( std::declval<V>().data() ), T *>::value &&
                                         std::is_convertible<decltype( std::declval<V>().size() ), std::size_t>::value && std::is_lvalue_reference<V>::value,
                                       int>::type = 0>
+#  else
+    template <typename V>
+    requires( !std::is_convertible<decltype( std::declval<V>().begin() ), T *>::value &&
+              std::is_convertible<decltype( std::declval<V>().data() ), T *>::value &&
+              std::is_convertible<decltype( std::declval<V>().size() ), std::size_t>::value && std::is_lvalue_reference<V>::value )
+#  endif
     ArrayProxyNoTemporaries( V && v ) VULKAN_HPP_NOEXCEPT
       : m_count( static_cast<uint32_t>( v.size() ) )
       , m_ptr( v.data() )
@@ -463,10 +489,16 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
     }
 
     // Any l-value reference with a .begin() return type implicitly convertible to T*, and a .size() return type implicitly convertible to size_t.
+#  if VULKAN_HPP_CPP_VERSION < 20
     template <typename V,
               typename std::enable_if<std::is_convertible<decltype( std::declval<V>().begin() ), T *>::value &&
                                         std::is_convertible<decltype( std::declval<V>().size() ), std::size_t>::value && std::is_lvalue_reference<V>::value,
                                       int>::type = 0>
+#  else
+    template <typename V>
+    requires std::is_convertible<decltype( std::declval<V>().begin() ), T *>::value &&
+               std::is_convertible<decltype( std::declval<V>().size() ), std::size_t>::value && std::is_lvalue_reference<V>::value
+#  endif
     ArrayProxyNoTemporaries( V && v ) VULKAN_HPP_NOEXCEPT
       : m_count( static_cast<uint32_t>( v.size() ) )
       , m_ptr( v.begin() )
@@ -9387,47 +9419,47 @@ VULKAN_HPP_EXPORT namespace VULKAN_HPP_NAMESPACE
   //=========================
   //=== CONSTEXPR CALLEEs ===
   //=========================
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t apiVersionMajor( T const version )
   {
     return ( ( (uint32_t)( version ) >> 22u ) & 0x7Fu );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t apiVersionMinor( T const version )
   {
     return ( ( (uint32_t)( version ) >> 12u ) & 0x3FFu );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t apiVersionPatch( T const version )
   {
     return ( (uint32_t)( version ) & 0xFFFu );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t apiVersionVariant( T const version )
   {
     return ( (uint32_t)( version ) >> 29u );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t makeApiVersion( T const variant, T const major, T const minor, T const patch )
   {
     return ( ( ( (uint32_t)( variant ) ) << 29u ) | ( ( (uint32_t)( major ) ) << 22u ) | ( ( (uint32_t)( minor ) ) << 12u ) | ( (uint32_t)( patch ) ) );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t makeVersion( T const major, T const minor, T const patch )
   {
     return ( ( ( (uint32_t)( major ) ) << 22u ) | ( ( (uint32_t)( minor ) ) << 12u ) | ( (uint32_t)( patch ) ) );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t versionMajor( T const version )
   {
     return ( (uint32_t)( version ) >> 22u );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t versionMinor( T const version )
   {
     return ( ( (uint32_t)( version ) >> 12u ) & 0x3FFu );
   }
-  template <typename T, typename = typename std::enable_if<std::is_integral<T>::value>::type>
+  VULKAN_HPP_TEMPLATE_INTEGRAL
   VULKAN_HPP_CONSTEXPR uint32_t versionPatch( T const version )
   {
     return ( (uint32_t)( version ) & 0xFFFu );
